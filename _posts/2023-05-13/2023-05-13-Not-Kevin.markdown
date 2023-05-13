@@ -1,0 +1,71 @@
+---
+layout: post
+title:  Not Kevin
+date:   2023-05-13 11:00:00 +1000
+categories: gpt chatbot
+---
+
+[NotKevin][NotKevin] represents my attempt to create a fun, Command Line Interface (CLI) style chatbot, which leverages 
+the power of OpenAI's GPT-3/4 and incorporates a storage backend. My inspiration for this project was sparked by the 
+[Generative Agents][Generative-Agents] paper and the [Auto GPT][Auto-GPT] repository. Both of these resources provided 
+unique perspectives on how to utilize OpenAI models in innovative ways I hadn't previously considered.
+
+
+
+![Gandalf](Gandalf.png)
+
+## How it Works
+
+My primary goal was to introduce some form of persistence into my interactions with the chatbot, which is something not 
+typically seen when using the standard chat-GPT interface. I've currently implemented a memory system that includes three
+ files for each named entity. These files are:
+
+- `personality.txt` - The primary file that stores the text associated with the entity.
+- `content.npy` - A saved record of messages exchanged between the user and the chatbot.
+- `vector.npy` - The embedding vector for each of these messages.
+
+The process of information exchange is straightforward. The user submits a message, which is then sent to the chat API,
+accompanied by a system message. Both the user's input and the chatbot's response are passed to the embeddings API to 
+obtain the embeddings for future use. These embeddings are saved, along with the messages, before the chatbot's response
+is returned to the user.
+
+## Prompt Work
+
+To foster an authentic conversation, some behind-the-scenes work is carried out between the System message and the User 
+message. This involves the use of context messages and insights. Context messages are determined based on a ranking system
+that uses the dot-product of the embeddings, with the objective of identifying similar comments.
+
+Insights are additional information that the chat API is requested to return with each message. While they're not always
+provided by the API, when they are, they can be quite useful. These insights are processed through a separate prompt at
+regular intervals to generate deeper insights that are incorporated into the user prompts. These often provide valuable
+information about the fundamental topics the user is discussing, especially when using the GPT-4 engine.
+
+## Installation and Use
+
+The installation process is straightforward. As of this post's writing, version `0.0.4` is the latest, but future versions
+may be available. The system registers a command against the installed environment, so I've found that using conda is the
+easiest method.
+
+{% highlight bash %}
+conda create -n NotKevin python=3.11
+python -m pip install "NotKevin @ git+https://github.com/GandalfsDad/NotKevin.git@0.0.4"
+{% endhighlight %}
+
+Once installation is complete, the `NK` command should be available. The command can be executed with no arguments to
+interact with a bot named `NotKevin`. Alternatively, you can specify a name using the `--name` argument. By default, the
+system uses the GPT-3 engine, but you can switch to GPT-4 with the `--gpt4` argument.
+
+{% highlight bash %}
+NK --name Bill --gpt4
+{% endhighlight %}
+
+## Future Improvements
+
+- Enhancing system and input prompts
+- Converting the chat history into the standard API format
+- Integrating Pinecone as a database backend
+
+[NotKevin]: https://github.com/GandalfsDad/NotKevin
+[Generative-Agents]: https://arxiv.org/abs/2304.03442
+[Auto-GPT]: https://github.com/Significant-Gravitas/Auto-GPT
+
