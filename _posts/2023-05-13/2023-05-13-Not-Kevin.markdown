@@ -12,7 +12,7 @@ unique perspectives on how to utilize OpenAI models in innovative ways I hadn't 
 
 
 
-![Gandalf](Gandalf.png)
+![Gandalf]({{ "/assets/images/Gandalf.png" | relative_url }})
 
 ## How it Works
 
