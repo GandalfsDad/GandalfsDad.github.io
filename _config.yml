@@ -18,7 +18,7 @@
 # You can create any custom variable you would like, and they will be accessible
 # in the templates via {{ site.myvariable }}.
 
-title: Showcase
+title: Gandalfs Dad
 email: Rhian.McClelland@Outlook.com
 description: >- # this means to ignore newlines until "baseurl:"
   This is a showcase of some of my hobby projects and toy examples from my professional work that is often not associated with this account.
