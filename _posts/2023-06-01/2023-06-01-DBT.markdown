@@ -1,0 +1,83 @@
+---
+layout: post
+title:  Data Build Tool (dbt)
+date:   2023-06-01 05:00:00 +1000
+categories: data 
+---
+
+I've recently become a big fan of dbt. Its modular approach to project organization and its ability to test and document data
+transformations are significant wins for me. Having used it for a few months, I want to share some of my favorite features that
+may not be the first things new users are thinking about.
+
+### Project Configuration
+
+While it may not be the most exciting place to start, I want to highlight the importance of path variables. These variables
+allow you to define the target locations for your seeds, models, and even the compiled SQL files. I've found it extremely
+beneficial to relocate everything to a dbt folder at the root of my project. This practice distinctly separates the data
+transformation aspect from other components, like data analysis.
+
+
+{% highlight yaml %}
+name: myproject
+
+config-version: 2
+version: 0.0.1
+
+profile: myprofile
+
+model-paths: ["dbt/models"]
+seed-paths: ["dbt/seeds"]
+test-paths: ["dbt/tests"]
+docs-paths: ["dbt/docs"]
+
+target-path: "dbt/target"
+log-path: "dbt/log"   
+
+{% endhighlight %}
+
+### ---select
+
+The feature that allows you to execute only a portion of the data models is a considerable advantage, especially when debugging
+larger models that could have significant run times. I've also found it helpful that you can apply this to a directory or a 
+specific file/target table.
+
+{% highlight bash %}
+dbt run --select targtet_table
+{% endhighlight %}
+
+
+### incremental models
+
+Incremental models are fantastic when dealing heavily with time-series data. Many of the projects I work on involve identifying
+interesting events within time-series data. The ability to load only a portion of a dataset, then incrementally adjust it as new
+data arrives, or as I decide to include more data for testing, is a significant efficiency booster for analytics projects.
+
+{% highlight sql %}
+{% raw %}
+
+{{
+    config(
+        materialized='incremental'
+    )
+}}
+
+SELECT 
+    * 
+FROM 
+    {{ source('somesource', 'sometable') }}
+WHERE
+    event_time < 'somefixedtime'::timestamp 
+{% if is_incremental() %}
+  and event_time > (select max(event_time) from {{ this }})
+{% endif %}
+
+{% endraw %}
+{% endhighlight %}
+
+
+### ephemeral models
+
+Ephemeral models, like incremental models, are an immense help in my work. Often, in historical analytics projects, I've found
+myself repeatedly writing the same CTE patterns. There's always some dataset that I'm comfortable with, but doesn't need to be
+materialized. Having one place to define the CTE as a model is great for consistency and then confidently building it out
+knowing I haven't missed a filter.
