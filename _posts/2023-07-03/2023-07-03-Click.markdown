@@ -19,6 +19,12 @@ commands. The sub-command functions are decorated with `@cli.command()` to tie t
 using the `@click.option()`. Notice that each of the options is defined as an input to the command function.  It's possible to 
 replace this with `**kwargs` in order to avoid calling out all individual options.
 
+The options themselves have a few interesting parameters. In order to restrict the inputs for the model option, I have
+used the `type=click.Choice()` parameter. The `case_sensitive=False` parameter is used to ensure that the input is not case
+sensitive.  The `prompt` parameter is used to prompt the user for input if the option is not provided, which is great as 
+it allows for a nice user experience. 
+
+
 {% highlight python %}
 {% raw %}
 import click
