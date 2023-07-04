@@ -1,0 +1,173 @@
+---
+layout: post
+title:  Click
+date:   2023-07-03 17:00:00 +1000
+categories: llm cli 
+---
+[Click][ClickDocs] is a python library for creating command line interface (cli) tools. I have been quite unwell today, so took
+some time to while stuck in bed to give it a try.  I have not really spent too much time working on cli tools or python scripts 
+with multiple commands/options before so this was a new experience.
+
+As a way to get started I created a [CLI tool][AssistMeRepo] that has 2 commands that link up to the openAI API.
+I intend to expand this tool (mainly for myself) to support a few other API's and maybe add some additional features in 
+the future.
+
+### Basic Setup
+
+The below basic setup demonstrates how a click tool can be setup.  The `@click.group()` decorator is used to define a group of
+commands. The sub-command functions are decorated with `@cli.command()` to tie them to the group and the options are defined
+using the `@click.option()`. Notice that each of the options is defined as an input to the command function.  It's possible to 
+replace this with `**kwargs` in order to avoid calling out all individual options.
+
+The options themselves have a few interesting parameters. In order to restrict the inputs for the model option, I have
+used the `type=click.Choice()` parameter. The `case_sensitive=False` parameter is used to ensure that the input is not case
+sensitive.  The `prompt` parameter is used to prompt the user for input if the option is not provided, which is great as 
+it allows for a nice user experience. 
+
+
+{% highlight python %}
+{% raw %}
+import click
+
+@click.group()
+@click.pass_context
+def cli(ctx):
+    ctx.ensure_object(dict)
+
+@cli.command('simple')
+@click.pass_context
+@click.option('--model','-m', default='GPT3',
+            type=click.Choice(['GPT3', 'GPT4'], case_sensitive=False),
+            help='Model to use for generating text')
+@click.option('--input', '-i',
+            prompt = "You", 
+            help='Input text')
+def simple(ctx, model, input):
+    ctx.obj['model'] = model
+    ctx.obj['input'] = input
+    make_call(ctx)
+
+@cli.command('chat')
+@click.pass_context
+@click.option('--model','-m', default='GPT3',
+            type=click.Choice(['GPT3', 'GPT4'], case_sensitive=False),
+            elp='Model to use for generating text')
+@click.option('--name', '-n', 
+            default='Assistant', 
+            help='Name of Assistant')
+def chat(ctx, model, name):
+    ctx.obj['model'] = model
+    ctx.obj['name'] = name
+    make_call(ctx)
+
+if __name__ == '__main__':
+    cli(obj={})
+
+{% endraw %}
+{% endhighlight %}
+
+
+In order to run these commands you need to ensure the project setup contains a console script entry point.
+The great part about this is only the top level command needs to be defined. 
+
+{% highlight python %}
+{% raw %}
+
+setup(
+    name="AssistMe",
+    ...,
+    entry_points={
+        'console_scripts':[
+            'assistme=AssistMe.CLI.main:cli'
+        ]
+    }
+)
+{% endraw %}
+{% endhighlight %}
+
+Once we have installed the library the commands can be run from the terminal.
+
+{% highlight bash %}
+$ assistme chat --model gpt4 --name "Kevin"
+{% endhighlight %}
+
+### Some Improvements
+
+The setup is nice but you can imagine that if you were running a large number of commands with a large number of options
+it would be difficult to constantly define them as decorators. It's possible to define the options as variables and then 
+pass them into the decorator.  This is a nice way to keep the code clean and easy to read.
+
+{% highlight python %}
+{% raw %}
+#params.py
+_name = click.option('--name', '-n', 
+                        default='Assistant', 
+                        help='Name of Assistant')
+
+_model = click.option('--model','-m', 
+                        default='GPT3',
+                        type=click.Choice(['GPT3', 'GPT4'], case_sensitive=False),
+                        help='Model to use for generating text')
+
+_input = click.option('--input', '-i',
+                        prompt = "You", 
+                        help='Input text')
+
+_system = click.option('--system', '-s',
+                        default=BASE_SYSTEM_PROMPT,
+                        help='System prompt')
+{% endraw %}
+{% endhighlight %}
+
+Once you have defined the options like this they can be imported and allow for much neater code.
+
+{% highlight python %}
+{% raw %}
+import click
+from ..Engine import make_call
+from ..CLI import params as p
+
+@click.group()
+@click.pass_context
+def cli(ctx, **kwargs):
+    ctx.ensure_object(dict)
+
+@cli.command('simple')
+@click.pass_context
+@p._model
+@p._name
+@p._input
+@p._system
+def simple(ctx, **kwargs):
+    ctx = p.parse_params(ctx, **kwargs)
+    make_call(ctx)
+
+@cli.command('chat')
+@click.pass_context
+@p._model
+@p._name
+@p._system
+def chat(ctx, **kwargs):
+    ctx = p.parse_params(ctx, **kwargs)
+    make_call(ctx)
+
+if __name__ == '__main__':
+    cli(obj={})
+
+{% endraw %}
+{% endhighlight %}
+
+The `parse_params` function is used to parse the parameters and add them to the context object. This simplifies any
+access required by the downstream functions.
+
+### Conclusion
+Above I've quickly went over some of the basics of click and how i've used it to create a simple CLI tool.
+I hope to play around with it more in the future to get more insights on the possibilities.
+If you want to play around with the tool you can install it using pip.
+
+{% highlight bash %}
+$ pip install 'git+https://github.com/GandalfsDad/assist-me.git'
+{% endhighlight %}
+
+[ClickDocs]: https://click.palletsprojects.com/en/8.1.x/
+[AssistMeRepo]: https://github.com/GandalfsDad/assist-me
