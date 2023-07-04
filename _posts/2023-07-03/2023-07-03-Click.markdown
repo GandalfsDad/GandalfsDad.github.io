@@ -129,7 +129,7 @@ from ..CLI import params as p
 
 @click.group()
 @click.pass_context
-def cli(ctx, **kwargs) -> None:
+def cli(ctx, **kwargs):
     ctx.ensure_object(dict)
 
 @cli.command('simple')
